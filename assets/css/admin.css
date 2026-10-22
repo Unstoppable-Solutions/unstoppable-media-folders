@@ -1,0 +1,380 @@
+/**
+ * Unstoppable Media Folders - admin styles.
+ */
+
+/* Layout: sidebar + media content side by side. */
+.umfd-has-sidebar #wpbody-content > .wrap {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+}
+
+.umfd-sidebar {
+	flex: 0 0 240px;
+	width: 240px;
+	box-sizing: border-box;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 12px;
+	margin-top: 10px;
+}
+
+.umfd-sidebar * {
+	box-sizing: border-box;
+}
+
+.umfd-content-area {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* Sidebar header. */
+.umfd-sidebar__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.umfd-sidebar__title {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: #1d2327;
+}
+
+.umfd-add-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	cursor: pointer;
+	border: none;
+	background: none;
+	color: #2271b1;
+	font-size: 12px;
+	padding: 2px 4px;
+}
+
+.umfd-add-btn:hover {
+	color: #135e96;
+}
+
+.umfd-add-btn .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	line-height: 16px;
+}
+
+/* Tree. */
+.umfd-tree,
+.umfd-tree,
+.umfd-tree ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.umfd-tree ul {
+	margin-left: 14px;
+	border-left: 1px solid #f0f0f1;
+}
+
+.umfd-node__row {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 5px 6px;
+	border-radius: 3px;
+	cursor: pointer;
+	color: #1d2327;
+	font-size: 13px;
+	line-height: 1.4;
+	transition: background-color .12s ease;
+}
+
+.umfd-node__row:hover {
+	background: #f6f7f7;
+}
+
+.umfd-node.is-active > .umfd-node__row {
+	background: #2271b1;
+	color: #fff;
+}
+
+.umfd-node.is-active > .umfd-node__row .dashicons,
+.umfd-node.is-active > .umfd-node__row .umfd-node__count {
+	color: #fff;
+}
+
+.umfd-node.is-droptarget > .umfd-node__row {
+	outline: 2px dashed #2271b1;
+	outline-offset: -2px;
+	background: #f0f6fc;
+}
+
+.umfd-node__icon {
+	color: #f0b849; /* Unstoppable Solutions brand gold. */
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	line-height: 18px;
+	flex: 0 0 auto;
+}
+
+.umfd-node--all .umfd-node__icon,
+.umfd-node--uncategorized .umfd-node__icon {
+	color: #8c8f94;
+}
+
+.umfd-node__label {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+/* Defensive layout: force the icon/label layout so no theme or plugin rule can
+   push the name under the icon (uses !important intentionally to win any
+   specificity war within our own scoped sidebar). */
+.umfd-sidebar .umfd-node {
+	list-style: none !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+.umfd-sidebar .umfd-node__row {
+	display: flex !important;
+	flex-wrap: nowrap !important;
+	align-items: center !important;
+	position: relative !important;
+}
+
+.umfd-sidebar .umfd-node__icon {
+	position: static !important;
+	float: none !important;
+	order: 0 !important;
+	flex: 0 0 auto !important;
+	width: 20px !important;
+	height: 20px !important;
+	margin: 0 6px 0 0 !important;
+	text-align: center !important;
+	overflow: hidden !important;
+}
+
+.umfd-sidebar .umfd-node__label {
+	position: static !important;
+	float: none !important;
+	order: 1 !important;
+	flex: 1 1 auto !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	text-indent: 0 !important;
+	direction: ltr !important;
+	text-align: left !important;
+	overflow: hidden !important;
+	white-space: nowrap !important;
+	text-overflow: ellipsis !important;
+}
+
+.umfd-sidebar .umfd-node__count {
+	order: 2 !important;
+	float: none !important;
+	position: static !important;
+}
+
+.umfd-node__count {
+	flex: 0 0 auto;
+	font-size: 11px;
+	color: #646970;
+	background: #f0f0f1;
+	border-radius: 9px;
+	padding: 0 6px;
+	min-width: 18px;
+	text-align: center;
+}
+
+.umfd-node.is-active > .umfd-node__row .umfd-node__count {
+	background: rgba(255, 255, 255, .25);
+}
+
+/* Row actions. */
+.umfd-node__actions {
+	display: none;
+	flex: 0 0 auto;
+	gap: 2px;
+}
+
+.umfd-node__row:hover .umfd-node__actions {
+	display: inline-flex;
+}
+
+.umfd-node__action {
+	border: none;
+	background: none;
+	cursor: pointer;
+	padding: 2px;
+	color: inherit;
+	opacity: .7;
+}
+
+.umfd-node__action:hover {
+	opacity: 1;
+}
+
+.umfd-node__action .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	line-height: 16px;
+}
+
+/* Inline new-folder / rename input. */
+.umfd-inline-form {
+	display: flex;
+	gap: 4px;
+	margin: 6px 0;
+	align-items: center;
+}
+
+.umfd-inline-form input[type="text"] {
+	flex: 1 1 auto;
+	min-width: 0;
+	height: 30px;
+	margin: 0;
+}
+
+.umfd-inline-form .button {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	min-height: 30px;
+	padding: 0;
+	line-height: 1;
+}
+
+.umfd-inline-form .button .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	line-height: 18px;
+	margin: 0;
+}
+
+.umfd-inline-form .button svg {
+	display: block;
+}
+
+/* Keyboard focus (ARIA tree). */
+.umfd-tree [role="treeitem"] {
+	outline: none;
+}
+
+.umfd-tree [role="treeitem"]:focus > .umfd-node__row {
+	box-shadow: inset 0 0 0 2px #2271b1;
+}
+
+/* Empty state. */
+.umfd-empty {
+	font-size: 12px;
+	color: #646970;
+	padding: 10px 6px 4px;
+	margin: 0;
+	line-height: 1.5;
+}
+
+/* States. */
+.umfd-state {
+	font-size: 12px;
+	color: #646970;
+	padding: 8px 4px;
+}
+
+.umfd-state--error {
+	color: #b32d2e;
+}
+
+.umfd-spinner {
+	display: inline-block;
+	width: 14px;
+	height: 14px;
+	border: 2px solid #c3c4c7;
+	border-top-color: #2271b1;
+	border-radius: 50%;
+	animation: umfd-spin .7s linear infinite;
+	vertical-align: middle;
+	margin-right: 6px;
+}
+
+@keyframes umfd-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Drag helper. */
+.umfd-drag-helper {
+	background: #2271b1;
+	color: #fff;
+	padding: 4px 10px;
+	border-radius: 3px;
+	font-size: 12px;
+	z-index: 100000;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+	/* Let elementFromPoint() see the folder row underneath the cursor. */
+	pointer-events: none;
+}
+
+/* Attachment edit folder checkboxes. */
+.umfd-attachment-folders {
+	max-height: 160px;
+	overflow-y: auto;
+}
+
+.umfd-folder-choice {
+	display: block;
+	margin: 2px 0;
+	font-size: 13px;
+}
+
+/* Toast for grid drag feedback. */
+.umfd-toast {
+	position: fixed;
+	bottom: 24px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: #1d2327;
+	color: #fff;
+	padding: 10px 18px;
+	border-radius: 4px;
+	font-size: 13px;
+	z-index: 100001;
+	opacity: 0;
+	transition: opacity .2s ease;
+}
+
+.umfd-toast.is-visible {
+	opacity: 1;
+}
+
+/* Responsive: stack on narrow screens. */
+@media screen and (max-width: 782px) {
+	.umfd-has-sidebar #wpbody-content > .wrap {
+		flex-direction: column;
+	}
+
+	.umfd-sidebar {
+		flex-basis: auto;
+		width: 100%;
+	}
+}
