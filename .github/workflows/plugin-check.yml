@@ -39,5 +39,6 @@ jobs:
             SECURITY.md
             CONTRIBUTING.md
             CHANGELOG.md
+            ROADMAP.md
           include-experimental: true
 
