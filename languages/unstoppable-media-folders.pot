@@ -210,3 +210,12 @@ msgstr ""
 #: includes/class-umfd-taxonomy.php:47
 msgid "No folders found."
 msgstr ""
+
+#: includes/class-umfd-admin.php
+msgid "1 item"
+msgstr ""
+
+#. translators: %d: number of media items being dragged.
+#: includes/class-umfd-admin.php:183
+msgid "%d items"
+msgstr ""

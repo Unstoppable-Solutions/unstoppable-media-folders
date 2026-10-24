@@ -467,7 +467,11 @@
 
 		$el.draggable( {
 			helper: function () {
-				return $( '<div class="umfd-drag-helper" />' ).text( '1 item' );
+				var n     = selectedAttachmentIds( $el ).length || 1;
+				var label = ( 1 === n )
+					? S.dragItem
+					: ( S.dragItems || '%d items' ).replace( '%d', n );
+				return $( '<div class="umfd-drag-helper" />' ).text( label );
 			},
 			appendTo: 'body',
 			cursorAt: { top: 10, left: 12 },
@@ -520,29 +524,103 @@
 		return id ? parseInt( id, 10 ) : 0;
 	}
 
+	// Which attachments a drag should move. If the dragged item is part of a
+	// multi-selection, move the whole selection; otherwise just the dragged item.
+	//
+	// Selection is detected through several strategies so it works in list mode,
+	// the stock grid, and grids that other plugins have customized (which may not
+	// use WordPress's standard `.selected` class):
+	//   1. list-table checked row checkboxes
+	//   2. the wp.media frame's own selection collection (authoritative in grid)
+	//   3. grid thumbnails marked selected, by class OR a checked checkbox
+	function selectedAttachmentIds( $dragged ) {
+		var ids  = [];
+		var seen = {};
+		function add( v ) {
+			v = parseInt( v, 10 );
+			if ( v && ! seen[ v ] ) {
+				seen[ v ] = true;
+				ids.push( v );
+			}
+		}
+
+		var draggedId = attachmentIdFromDraggable( $dragged );
+
+		// 1) List mode: checked row checkboxes.
+		var $checked = $( '.wp-list-table.media tbody tr .check-column input:checked' );
+		if ( $checked.length > 1 && $dragged.find( '.check-column input' ).is( ':checked' ) ) {
+			$checked.each( function () { add( $( this ).val() ); } );
+			if ( ids.length > 1 ) {
+				return ids;
+			}
+		}
+
+		// 2) Grid mode: the media frame's selection collection, when reachable.
+		try {
+			if ( window.wp && wp.media && wp.media.frame && typeof wp.media.frame.state === 'function' ) {
+				var state = wp.media.frame.state();
+				var sel   = ( state && typeof state.get === 'function' ) ? state.get( 'selection' ) : null;
+				if ( sel && sel.length > 1 && ( ! draggedId || sel.get( draggedId ) ) ) {
+					sel.each( function ( m ) { add( m.id ); } );
+					if ( ids.length > 1 ) {
+						return ids;
+					}
+				}
+			}
+		} catch ( e ) {
+			// Fall through to the DOM-based detection below.
+			ids = [];
+			seen = {};
+		}
+
+		// 3) Grid mode DOM: items marked selected by class, or with a checked box.
+		var $selected = $( '.attachments .attachment.selected' );
+		if ( ! $selected.length ) {
+			$selected = $( '.attachments .attachment' ).filter( function () {
+				return $( this ).find( 'input[type="checkbox"]:checked' ).length > 0 ||
+					'true' === $( this ).attr( 'aria-checked' );
+			} );
+		}
+		if ( $selected.length > 1 ) {
+			var draggedInSelection = ! draggedId || $selected.filter( function () {
+				return parseInt( $( this ).attr( 'data-id' ), 10 ) === draggedId;
+			} ).length > 0;
+			if ( draggedInSelection ) {
+				$selected.each( function () { add( $( this ).attr( 'data-id' ) ); } );
+				if ( ids.length > 1 ) {
+					return ids;
+				}
+			}
+		}
+
+		// 4) Default: just the dragged item.
+		ids = [];
+		add( draggedId );
+		return ids;
+	}
+
 	// Drop targets are handled by the manual pointer tracking in
 	// startDraggable()/updateDropTarget(); no jQuery UI droppable needed.
 	function bindDropTargets() {}
 
 	function handleDrop( $dragged, folder ) {
-		var attId = attachmentIdFromDraggable( $dragged );
-		if ( ! attId ) {
+		var ids = selectedAttachmentIds( $dragged );
+		if ( ! ids.length ) {
 			return;
 		}
 
 		var isUncat = ( 'uncategorized' === folder );
 		var source  = getActiveFolderFilter(); // The folder we are viewing now.
-		var payload = { attachment_ids: [ attId ] };
+		var payload = { attachment_ids: ids };
 
 		if ( isUncat ) {
 			// Drop on Uncategorized = remove from every folder.
 			payload.mode = 'remove';
 		} else {
-			// Drop on a folder = MOVE the item there. We replace the item's
-			// folder membership so it ends up in exactly this one folder, with
-			// no copy left behind in its previous folder. (Assigning an item to
-			// multiple folders is still available from the attachment details
-			// panel, where it is an explicit choice.)
+			// Drop on a folder = MOVE the item(s) there. We replace folder
+			// membership so each item ends up in exactly this one folder, with no
+			// copy left behind. (Assigning an item to multiple folders is still
+			// available from the attachment details panel.)
 			payload.mode      = 'set';
 			payload.folder_id = folder;
 		}
@@ -550,12 +628,13 @@
 		request( 'umfd_assign_media', payload )
 			.done( function ( res ) {
 				if ( res && res.success && res.data && res.data.updated > 0 ) {
-					toast( S.droppedToFolder );
+					// Server returns an accurate, pluralized "N items moved."
+					toast( ( res.data.message ) ? res.data.message : S.droppedToFolder );
 					loadTree();
-					reflectMoveInView( $dragged, folder, isUncat, source );
+					reflectMoveInView( $dragged, ids, folder, isUncat, source );
 				} else if ( res && res.success ) {
 					// Server accepted the request but nothing changed (e.g. no
-					// permission to edit that item).
+					// permission to edit those items).
 					toast( S.noPermissionItem );
 				} else {
 					toast( res && res.data ? res.data.message : S.error );
@@ -572,7 +651,7 @@
 	//
 	// List mode: there is no media app, so we fade the table row out if it no
 	// longer matches the active filter.
-	function reflectMoveInView( $dragged, targetFolder, isUncat, source ) {
+	function reflectMoveInView( $dragged, ids, targetFolder, isUncat, source ) {
 		var lib = getGridLibrary();
 		if ( lib ) {
 			clearMediaCache();
@@ -584,16 +663,20 @@
 
 		var cur = String( source || '' );
 		if ( '' === cur ) {
-			return; // "All Media" – the item still belongs here.
+			return; // "All Media" – the items still belong here.
 		}
 		var stillVisible = isUncat ? ( 'uncategorized' === cur ) : ( cur === String( targetFolder ) );
 		if ( stillVisible ) {
 			return;
 		}
-		var $row = $dragged.closest( 'tr' );
-		if ( $row.length ) {
-			$row.fadeOut( 180, function () { $( this ).remove(); } );
-		}
+
+		// List mode: fade out every moved row.
+		( ids || [] ).forEach( function ( id ) {
+			var $row = $( '.wp-list-table.media tbody tr .check-column input[value="' + id + '"]' ).closest( 'tr' );
+			if ( $row.length ) {
+				$row.fadeOut( 180, function () { $( this ).remove(); } );
+			}
+		} );
 	}
 
 	/* --------------------------------------------------------------------
@@ -643,15 +726,33 @@
 		} );
 
 		// 3) Add the dropdown to every AttachmentsBrowser toolbar.
+		//
+		//    The folder filter is cosmetic. It must NEVER stop the toolbar from
+		//    building, because on the grid Media Library screen the file
+		//    uploader (drop zone + plupload) is wired up as part of this same
+		//    view render. If our filter threw here, the whole frame render would
+		//    abort and uploads would silently fail. So we always let the native
+		//    toolbar build first, then add our filter inside a guard: any
+		//    failure is swallowed and the media frame keeps working.
 		var Browser = wp.media.view.AttachmentsBrowser;
 		wp.media.view.AttachmentsBrowser = Browser.extend( {
 			createToolbar: function () {
 				Browser.prototype.createToolbar.call( this );
-				this.toolbar.set( 'umfdFolderFilter', new UMFFilters( {
-					controller: this.controller,
-					model: this.collection.props,
-					priority: -75
-				} ).render() );
+
+				try {
+					if ( ! this.toolbar || ! this.collection || ! this.collection.props ) {
+						return;
+					}
+					this.toolbar.set( 'umfdFolderFilter', new UMFFilters( {
+						controller: this.controller,
+						model: this.collection.props,
+						priority: -75
+					} ).render() );
+				} catch ( e ) {
+					if ( window.console && window.console.warn ) {
+						window.console.warn( 'Unstoppable Media Folders: folder filter skipped.', e );
+					}
+				}
 			}
 		} );
 	}
@@ -766,10 +867,63 @@
 	}
 
 	/* --------------------------------------------------------------------
+	 * Upload into the selected folder
+	 *
+	 * When a folder is selected in the Media Library, newly uploaded files
+	 * should land in that folder. We tag each upload request with the active
+	 * folder id (via plupload's per-file BeforeUpload params); the server files
+	 * the attachment into that folder on `add_attachment`. Like the folder
+	 * filter, this is wrapped so it can never interfere with the uploader — it
+	 * always delegates to the original init and swallows any error.
+	 * ------------------------------------------------------------------ */
+	function setupUploadAssign() {
+		if ( ! window.wp || ! wp.Uploader || ! wp.Uploader.prototype ) {
+			return;
+		}
+
+		var origInit = wp.Uploader.prototype.init;
+		wp.Uploader.prototype.init = function () {
+			if ( typeof origInit === 'function' ) {
+				origInit.apply( this, arguments );
+			}
+
+			try {
+				var up = this.uploader;
+				if ( ! up || typeof up.bind !== 'function' ) {
+					return;
+				}
+
+				// Stamp the active folder onto each file as it uploads.
+				up.bind( 'BeforeUpload', function ( uploader ) {
+					var folder = getActiveFolderFilter();
+					uploader.settings.multipart_params = uploader.settings.multipart_params || {};
+					if ( folder && '' !== folder && 'uncategorized' !== folder ) {
+						uploader.settings.multipart_params.umfd_upload_folder = folder;
+					} else {
+						delete uploader.settings.multipart_params.umfd_upload_folder;
+					}
+				} );
+
+				// Refresh the sidebar counts once the item is filed server-side.
+				up.bind( 'FileUploaded', function () {
+					if ( D.isLibrary ) {
+						window.setTimeout( loadTree, 400 );
+					}
+				} );
+			} catch ( e ) {
+				if ( window.console && window.console.warn ) {
+					window.console.warn( 'Unstoppable Media Folders: upload-assign hook skipped.', e );
+				}
+			}
+		};
+	}
+
+	/* --------------------------------------------------------------------
 	 * Init
 	 * ------------------------------------------------------------------ */
 	$( function () {
 		setupMediaFilter();
+		setupUploadAssign();
 		mountSidebar();
 		bindEvents();
 		observeMediaChanges();
