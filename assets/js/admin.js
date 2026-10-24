@@ -525,38 +525,78 @@
 	}
 
 	// Which attachments a drag should move. If the dragged item is part of a
-	// multi-selection (checked rows in list mode, selected thumbnails in grid
-	// mode), move the whole selection; otherwise just the dragged item.
+	// multi-selection, move the whole selection; otherwise just the dragged item.
+	//
+	// Selection is detected through several strategies so it works in list mode,
+	// the stock grid, and grids that other plugins have customized (which may not
+	// use WordPress's standard `.selected` class):
+	//   1. list-table checked row checkboxes
+	//   2. the wp.media frame's own selection collection (authoritative in grid)
+	//   3. grid thumbnails marked selected, by class OR a checked checkbox
 	function selectedAttachmentIds( $dragged ) {
-		var ids = [];
+		var ids  = [];
+		var seen = {};
+		function add( v ) {
+			v = parseInt( v, 10 );
+			if ( v && ! seen[ v ] ) {
+				seen[ v ] = true;
+				ids.push( v );
+			}
+		}
 
-		// List mode: checked row checkboxes.
+		var draggedId = attachmentIdFromDraggable( $dragged );
+
+		// 1) List mode: checked row checkboxes.
 		var $checked = $( '.wp-list-table.media tbody tr .check-column input:checked' );
 		if ( $checked.length > 1 && $dragged.find( '.check-column input' ).is( ':checked' ) ) {
-			$checked.each( function () {
-				var v = parseInt( $( this ).val(), 10 );
-				if ( v ) {
-					ids.push( v );
-				}
-			} );
-			return ids;
+			$checked.each( function () { add( $( this ).val() ); } );
+			if ( ids.length > 1 ) {
+				return ids;
+			}
 		}
 
-		// Grid mode: selected thumbnails.
+		// 2) Grid mode: the media frame's selection collection, when reachable.
+		try {
+			if ( window.wp && wp.media && wp.media.frame && typeof wp.media.frame.state === 'function' ) {
+				var state = wp.media.frame.state();
+				var sel   = ( state && typeof state.get === 'function' ) ? state.get( 'selection' ) : null;
+				if ( sel && sel.length > 1 && ( ! draggedId || sel.get( draggedId ) ) ) {
+					sel.each( function ( m ) { add( m.id ); } );
+					if ( ids.length > 1 ) {
+						return ids;
+					}
+				}
+			}
+		} catch ( e ) {
+			// Fall through to the DOM-based detection below.
+			ids = [];
+			seen = {};
+		}
+
+		// 3) Grid mode DOM: items marked selected by class, or with a checked box.
 		var $selected = $( '.attachments .attachment.selected' );
-		if ( $selected.length > 1 && $dragged.hasClass( 'attachment' ) && $dragged.hasClass( 'selected' ) ) {
-			$selected.each( function () {
-				var v = parseInt( $( this ).attr( 'data-id' ), 10 );
-				if ( v ) {
-					ids.push( v );
-				}
+		if ( ! $selected.length ) {
+			$selected = $( '.attachments .attachment' ).filter( function () {
+				return $( this ).find( 'input[type="checkbox"]:checked' ).length > 0 ||
+					'true' === $( this ).attr( 'aria-checked' );
 			} );
-			return ids;
+		}
+		if ( $selected.length > 1 ) {
+			var draggedInSelection = ! draggedId || $selected.filter( function () {
+				return parseInt( $( this ).attr( 'data-id' ), 10 ) === draggedId;
+			} ).length > 0;
+			if ( draggedInSelection ) {
+				$selected.each( function () { add( $( this ).attr( 'data-id' ) ); } );
+				if ( ids.length > 1 ) {
+					return ids;
+				}
+			}
 		}
 
-		// Default: just the dragged item.
-		var one = attachmentIdFromDraggable( $dragged );
-		return one ? [ one ] : [];
+		// 4) Default: just the dragged item.
+		ids = [];
+		add( draggedId );
+		return ids;
 	}
 
 	// Drop targets are handled by the manual pointer tracking in

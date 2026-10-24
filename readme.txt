@@ -3,7 +3,7 @@ Contributors: paramedic192
 Tags: media library, folders, media organization, attachments, taxonomy
 Requires at least: 5.8
 Tested up to: 7.1
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 Requires PHP: 7.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -60,9 +60,10 @@ This plugin does not connect to, or send any data to, external services. It make
 
 == Changelog ==
 
-= 1.1.0 =
+= 1.1.1 =
 * New: when a folder is selected in the Media Library, files you upload are automatically filed into that folder. Selecting All Media or Uncategorized uploads with no folder, as before.
 * New: drag-and-drop now moves your whole selection. Select multiple items (checkboxes in list view, or Bulk select in grid view) and drag any one of them onto a folder to move them all.
+* Multi-select drag now detects your selection across grids customized by other plugins.
 
 = 1.0.7 =
 * Fixed: on sites with other plugins that customize the Media Library, the folder filter could stop the grid uploader from working (files silently returned to the drop screen). The filter is now fully isolated so it can never block uploads or the media frame.
@@ -91,7 +92,7 @@ This plugin does not connect to, or send any data to, external services. It make
 
 == Upgrade Notice ==
 
-= 1.1.0 =
+= 1.1.1 =
 Uploads now go straight into the selected folder. Also includes the 1.0.7 uploader-conflict fix.
 
 = 1.0.7 =
