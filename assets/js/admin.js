@@ -643,15 +643,33 @@
 		} );
 
 		// 3) Add the dropdown to every AttachmentsBrowser toolbar.
+		//
+		//    The folder filter is cosmetic. It must NEVER stop the toolbar from
+		//    building, because on the grid Media Library screen the file
+		//    uploader (drop zone + plupload) is wired up as part of this same
+		//    view render. If our filter threw here, the whole frame render would
+		//    abort and uploads would silently fail. So we always let the native
+		//    toolbar build first, then add our filter inside a guard: any
+		//    failure is swallowed and the media frame keeps working.
 		var Browser = wp.media.view.AttachmentsBrowser;
 		wp.media.view.AttachmentsBrowser = Browser.extend( {
 			createToolbar: function () {
 				Browser.prototype.createToolbar.call( this );
-				this.toolbar.set( 'umfdFolderFilter', new UMFFilters( {
-					controller: this.controller,
-					model: this.collection.props,
-					priority: -75
-				} ).render() );
+
+				try {
+					if ( ! this.toolbar || ! this.collection || ! this.collection.props ) {
+						return;
+					}
+					this.toolbar.set( 'umfdFolderFilter', new UMFFilters( {
+						controller: this.controller,
+						model: this.collection.props,
+						priority: -75
+					} ).render() );
+				} catch ( e ) {
+					if ( window.console && window.console.warn ) {
+						window.console.warn( 'Unstoppable Media Folders: folder filter skipped.', e );
+					}
+				}
 			}
 		} );
 	}
