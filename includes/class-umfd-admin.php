@@ -31,8 +31,55 @@ class UMFD_Admin {
 		// List-mode filtering by folder.
 		add_action( 'pre_get_posts', array( $this, 'filter_list_query' ) );
 
+		// File a newly uploaded item into the folder the user is viewing.
+		add_action( 'add_attachment', array( $this, 'assign_uploaded_to_folder' ) );
+
 		// Admin notices.
 		add_action( 'admin_notices', array( $this, 'bulk_action_notice' ) );
+	}
+
+	/**
+	 * Assign a freshly uploaded attachment to the folder the user has selected.
+	 *
+	 * The admin script injects the active folder id into the uploader request as
+	 * `umfd_upload_folder`. This fires on `add_attachment`, so the item is filed
+	 * at creation time — no extra request and no race with the grid view.
+	 *
+	 * Every WordPress media-uploader request is signed with the `media-form`
+	 * nonce (set in plupload's multipart params), which is verified here before
+	 * anything is read or changed. The request is ignored unless the nonce is
+	 * valid, the user can upload and edit the item, and the target folder exists.
+	 *
+	 * @param int $attachment_id The new attachment's post ID.
+	 */
+	public function assign_uploaded_to_folder( $attachment_id ) {
+		// Verify the uploader nonce first, before reading any other request data.
+		if ( ! isset( $_POST['_wpnonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'media-form' ) ) {
+			return;
+		}
+
+		if ( empty( $_POST['umfd_upload_folder'] ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'upload_files' ) || ! current_user_can( 'edit_post', $attachment_id ) ) {
+			return;
+		}
+
+		$folder = sanitize_text_field( wp_unslash( $_POST['umfd_upload_folder'] ) );
+
+		// "All Media" ('') and "Uncategorized" mean "no folder" — leave it be.
+		if ( '' === $folder || 'uncategorized' === $folder ) {
+			return;
+		}
+
+		$folder_id = absint( $folder );
+		if ( $folder_id <= 0 || ! term_exists( $folder_id, UMFD_TAXONOMY ) ) {
+			return;
+		}
+
+		wp_set_object_terms( $attachment_id, array( $folder_id ), UMFD_TAXONOMY, true );
 	}
 
 	/**

@@ -784,10 +784,63 @@
 	}
 
 	/* --------------------------------------------------------------------
+	 * Upload into the selected folder
+	 *
+	 * When a folder is selected in the Media Library, newly uploaded files
+	 * should land in that folder. We tag each upload request with the active
+	 * folder id (via plupload's per-file BeforeUpload params); the server files
+	 * the attachment into that folder on `add_attachment`. Like the folder
+	 * filter, this is wrapped so it can never interfere with the uploader — it
+	 * always delegates to the original init and swallows any error.
+	 * ------------------------------------------------------------------ */
+	function setupUploadAssign() {
+		if ( ! window.wp || ! wp.Uploader || ! wp.Uploader.prototype ) {
+			return;
+		}
+
+		var origInit = wp.Uploader.prototype.init;
+		wp.Uploader.prototype.init = function () {
+			if ( typeof origInit === 'function' ) {
+				origInit.apply( this, arguments );
+			}
+
+			try {
+				var up = this.uploader;
+				if ( ! up || typeof up.bind !== 'function' ) {
+					return;
+				}
+
+				// Stamp the active folder onto each file as it uploads.
+				up.bind( 'BeforeUpload', function ( uploader ) {
+					var folder = getActiveFolderFilter();
+					uploader.settings.multipart_params = uploader.settings.multipart_params || {};
+					if ( folder && '' !== folder && 'uncategorized' !== folder ) {
+						uploader.settings.multipart_params.umfd_upload_folder = folder;
+					} else {
+						delete uploader.settings.multipart_params.umfd_upload_folder;
+					}
+				} );
+
+				// Refresh the sidebar counts once the item is filed server-side.
+				up.bind( 'FileUploaded', function () {
+					if ( D.isLibrary ) {
+						window.setTimeout( loadTree, 400 );
+					}
+				} );
+			} catch ( e ) {
+				if ( window.console && window.console.warn ) {
+					window.console.warn( 'Unstoppable Media Folders: upload-assign hook skipped.', e );
+				}
+			}
+		};
+	}
+
+	/* --------------------------------------------------------------------
 	 * Init
 	 * ------------------------------------------------------------------ */
 	$( function () {
 		setupMediaFilter();
+		setupUploadAssign();
 		mountSidebar();
 		bindEvents();
 		observeMediaChanges();
