@@ -178,6 +178,9 @@ class UMFD_Admin {
 			'emptyState'      => __( 'No folders yet. Use “Add Folder” to create your first one.', 'unstoppable-media-folders' ),
 			'error'           => __( 'Something went wrong. Please try again.', 'unstoppable-media-folders' ),
 			'droppedToFolder' => __( 'Moved to folder.', 'unstoppable-media-folders' ),
+			'dragItem'        => __( '1 item', 'unstoppable-media-folders' ),
+			/* translators: %d: number of media items being dragged. */
+			'dragItems'       => __( '%d items', 'unstoppable-media-folders' ),
 			'noPermissionItem' => __( 'That item could not be moved (no edit permission).', 'unstoppable-media-folders' ),
 			'filterLabel'     => __( 'Filter by folder', 'unstoppable-media-folders' ),
 		);

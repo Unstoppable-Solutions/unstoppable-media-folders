@@ -467,7 +467,11 @@
 
 		$el.draggable( {
 			helper: function () {
-				return $( '<div class="umfd-drag-helper" />' ).text( '1 item' );
+				var n     = selectedAttachmentIds( $el ).length || 1;
+				var label = ( 1 === n )
+					? S.dragItem
+					: ( S.dragItems || '%d items' ).replace( '%d', n );
+				return $( '<div class="umfd-drag-helper" />' ).text( label );
 			},
 			appendTo: 'body',
 			cursorAt: { top: 10, left: 12 },
@@ -520,29 +524,63 @@
 		return id ? parseInt( id, 10 ) : 0;
 	}
 
+	// Which attachments a drag should move. If the dragged item is part of a
+	// multi-selection (checked rows in list mode, selected thumbnails in grid
+	// mode), move the whole selection; otherwise just the dragged item.
+	function selectedAttachmentIds( $dragged ) {
+		var ids = [];
+
+		// List mode: checked row checkboxes.
+		var $checked = $( '.wp-list-table.media tbody tr .check-column input:checked' );
+		if ( $checked.length > 1 && $dragged.find( '.check-column input' ).is( ':checked' ) ) {
+			$checked.each( function () {
+				var v = parseInt( $( this ).val(), 10 );
+				if ( v ) {
+					ids.push( v );
+				}
+			} );
+			return ids;
+		}
+
+		// Grid mode: selected thumbnails.
+		var $selected = $( '.attachments .attachment.selected' );
+		if ( $selected.length > 1 && $dragged.hasClass( 'attachment' ) && $dragged.hasClass( 'selected' ) ) {
+			$selected.each( function () {
+				var v = parseInt( $( this ).attr( 'data-id' ), 10 );
+				if ( v ) {
+					ids.push( v );
+				}
+			} );
+			return ids;
+		}
+
+		// Default: just the dragged item.
+		var one = attachmentIdFromDraggable( $dragged );
+		return one ? [ one ] : [];
+	}
+
 	// Drop targets are handled by the manual pointer tracking in
 	// startDraggable()/updateDropTarget(); no jQuery UI droppable needed.
 	function bindDropTargets() {}
 
 	function handleDrop( $dragged, folder ) {
-		var attId = attachmentIdFromDraggable( $dragged );
-		if ( ! attId ) {
+		var ids = selectedAttachmentIds( $dragged );
+		if ( ! ids.length ) {
 			return;
 		}
 
 		var isUncat = ( 'uncategorized' === folder );
 		var source  = getActiveFolderFilter(); // The folder we are viewing now.
-		var payload = { attachment_ids: [ attId ] };
+		var payload = { attachment_ids: ids };
 
 		if ( isUncat ) {
 			// Drop on Uncategorized = remove from every folder.
 			payload.mode = 'remove';
 		} else {
-			// Drop on a folder = MOVE the item there. We replace the item's
-			// folder membership so it ends up in exactly this one folder, with
-			// no copy left behind in its previous folder. (Assigning an item to
-			// multiple folders is still available from the attachment details
-			// panel, where it is an explicit choice.)
+			// Drop on a folder = MOVE the item(s) there. We replace folder
+			// membership so each item ends up in exactly this one folder, with no
+			// copy left behind. (Assigning an item to multiple folders is still
+			// available from the attachment details panel.)
 			payload.mode      = 'set';
 			payload.folder_id = folder;
 		}
@@ -550,12 +588,13 @@
 		request( 'umfd_assign_media', payload )
 			.done( function ( res ) {
 				if ( res && res.success && res.data && res.data.updated > 0 ) {
-					toast( S.droppedToFolder );
+					// Server returns an accurate, pluralized "N items moved."
+					toast( ( res.data.message ) ? res.data.message : S.droppedToFolder );
 					loadTree();
-					reflectMoveInView( $dragged, folder, isUncat, source );
+					reflectMoveInView( $dragged, ids, folder, isUncat, source );
 				} else if ( res && res.success ) {
 					// Server accepted the request but nothing changed (e.g. no
-					// permission to edit that item).
+					// permission to edit those items).
 					toast( S.noPermissionItem );
 				} else {
 					toast( res && res.data ? res.data.message : S.error );
@@ -572,7 +611,7 @@
 	//
 	// List mode: there is no media app, so we fade the table row out if it no
 	// longer matches the active filter.
-	function reflectMoveInView( $dragged, targetFolder, isUncat, source ) {
+	function reflectMoveInView( $dragged, ids, targetFolder, isUncat, source ) {
 		var lib = getGridLibrary();
 		if ( lib ) {
 			clearMediaCache();
@@ -584,16 +623,20 @@
 
 		var cur = String( source || '' );
 		if ( '' === cur ) {
-			return; // "All Media" – the item still belongs here.
+			return; // "All Media" – the items still belong here.
 		}
 		var stillVisible = isUncat ? ( 'uncategorized' === cur ) : ( cur === String( targetFolder ) );
 		if ( stillVisible ) {
 			return;
 		}
-		var $row = $dragged.closest( 'tr' );
-		if ( $row.length ) {
-			$row.fadeOut( 180, function () { $( this ).remove(); } );
-		}
+
+		// List mode: fade out every moved row.
+		( ids || [] ).forEach( function ( id ) {
+			var $row = $( '.wp-list-table.media tbody tr .check-column input[value="' + id + '"]' ).closest( 'tr' );
+			if ( $row.length ) {
+				$row.fadeOut( 180, function () { $( this ).remove(); } );
+			}
+		} );
 	}
 
 	/* --------------------------------------------------------------------

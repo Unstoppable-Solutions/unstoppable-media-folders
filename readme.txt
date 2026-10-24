@@ -62,6 +62,7 @@ This plugin does not connect to, or send any data to, external services. It make
 
 = 1.1.0 =
 * New: when a folder is selected in the Media Library, files you upload are automatically filed into that folder. Selecting All Media or Uncategorized uploads with no folder, as before.
+* New: drag-and-drop now moves your whole selection. Select multiple items (checkboxes in list view, or Bulk select in grid view) and drag any one of them onto a folder to move them all.
 
 = 1.0.7 =
 * Fixed: on sites with other plugins that customize the Media Library, the folder filter could stop the grid uploader from working (files silently returned to the drop screen). The filter is now fully isolated so it can never block uploads or the media frame.
