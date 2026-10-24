@@ -20,6 +20,10 @@ Organize your WordPress Media Library into virtual, nestable folders — **witho
 
 Media plugins that reorganize the filesystem break every post that references the old path. Unstoppable Media Folders stays on top of the stock library and uses WordPress taxonomy under the hood, so you get the organization without the migration risk.
 
+## Roadmap
+
+Planned work and proposed features are tracked in [ROADMAP.md](ROADMAP.md).
+
 ## Development
 
 ### Release workflow
