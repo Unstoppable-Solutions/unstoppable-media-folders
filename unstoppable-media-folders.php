@@ -5,7 +5,6 @@
  * Description:       Organize the WordPress Media Library into virtual, nestable folders without moving files on disk. Existing media URLs never break.
  * Version:           1.1.3
  * Requires at least: 5.8
- * Tested up to:      7.1
  * Requires PHP:      7.4
  * Author:            Unstoppable Solutions
  * Author URI:        https://unstoppablesolutions.app
