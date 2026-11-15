@@ -190,6 +190,16 @@
 	position: static !important;
 }
 
+/* The row action buttons (add / rename / delete) must sit at the far right.
+   Without an explicit order they default to 0 and render on top of the folder
+   icon on the left — so give them the last order and keep them in flow. */
+.umfd-sidebar .umfd-node__actions {
+	order: 3 !important;
+	float: none !important;
+	position: static !important;
+	margin-left: auto !important;
+}
+
 .umfd-node__count {
 	flex: 0 0 auto;
 	font-size: 11px;
@@ -205,15 +215,20 @@
 	background: rgba(255, 255, 255, .25);
 }
 
-/* Row actions. */
+/* Row actions. Always visible (so delete/rename are discoverable and work on
+   touch screens), subtle until the row is hovered, focused, or active. */
 .umfd-node__actions {
-	display: none;
+	display: inline-flex;
 	flex: 0 0 auto;
 	gap: 2px;
+	opacity: .6;
+	transition: opacity .12s ease;
 }
 
-.umfd-node__row:hover .umfd-node__actions {
-	display: inline-flex;
+.umfd-node__row:hover .umfd-node__actions,
+.umfd-node:focus > .umfd-node__row .umfd-node__actions,
+.umfd-node.is-active > .umfd-node__row .umfd-node__actions {
+	opacity: 1;
 }
 
 .umfd-node__action {
