@@ -1,0 +1,34 @@
+name: Update WordPress.org Assets
+
+# Syncs the plugin's WordPress.org listing assets (icon, banner, screenshots in
+# .wordpress-org/) and the readme to the SVN /assets + trunk — WITHOUT creating a
+# new version or release. Lets us change screenshots/banner/icon/readme freely.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.wordpress-org/**'
+      - 'readme.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  assets:
+    name: Update assets & readme on WordPress.org
+    runs-on: ubuntu-latest
+    if: ${{ ! github.event.repository.is_template }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Update WordPress.org assets and readme
+        uses: 10up/action-wordpress-plugin-asset-update@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: unstoppable-media-folders
+          ASSETS_DIR: .wordpress-org
