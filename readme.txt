@@ -48,11 +48,9 @@ Any user with the `upload_files` capability (Authors and above by default).
 
 == Screenshots ==
 
-1. The folder sidebar in the Media Library, showing All Media, Uncategorized, and nested folders with item counts.
-2. Creating and nesting folders.
-3. Assigning a media item to folders from the attachment details panel.
-4. Moving media into a folder with drag-and-drop.
-5. The "Move to folder" bulk action in list view.
+1. The folder sidebar in the Media Library — All Media, Uncategorized, and your own folders with item counts, plus per-folder add, rename, and delete controls.
+2. Media organized into folders. Assign or move items between folders without moving a single file or changing any URL.
+3. Start organizing in seconds — create your first folder right from the sidebar.
 
 == External Services ==
 
