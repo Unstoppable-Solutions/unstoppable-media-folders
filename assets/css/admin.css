@@ -190,6 +190,44 @@
 	position: static !important;
 }
 
+/* The row action buttons (add / rename / delete) must sit at the far right.
+   Without an explicit order they default to 0 and render on top of the folder
+   icon on the left — so give them the last order and keep them in flow. */
+.umfd-sidebar .umfd-node__actions {
+	order: 3 !important;
+	float: none !important;
+	position: static !important;
+	margin-left: auto !important;
+	display: inline-flex !important;
+	flex: 0 0 auto !important;
+	gap: 2px !important;
+}
+
+/* Each action button is a fixed square that never shrinks, so the icons can't
+   overflow and overlap when the row is tight. */
+.umfd-sidebar .umfd-node__action {
+	order: 0 !important;
+	float: none !important;
+	position: static !important;
+	flex: 0 0 auto !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 24px !important;
+	min-width: 24px !important;
+	height: 24px !important;
+	padding: 0 !important;
+	margin: 0 !important;
+}
+
+.umfd-sidebar .umfd-node__action .dashicons {
+	font-size: 16px !important;
+	width: 16px !important;
+	height: 16px !important;
+	line-height: 16px !important;
+	margin: 0 !important;
+}
+
 .umfd-node__count {
 	flex: 0 0 auto;
 	font-size: 11px;
@@ -205,22 +243,33 @@
 	background: rgba(255, 255, 255, .25);
 }
 
-/* Row actions. */
+/* Row actions. Always visible (so delete/rename are discoverable and work on
+   touch screens), subtle until the row is hovered, focused, or active. */
 .umfd-node__actions {
-	display: none;
+	display: inline-flex;
 	flex: 0 0 auto;
 	gap: 2px;
+	opacity: .6;
+	transition: opacity .12s ease;
 }
 
-.umfd-node__row:hover .umfd-node__actions {
-	display: inline-flex;
+.umfd-node__row:hover .umfd-node__actions,
+.umfd-node:focus > .umfd-node__row .umfd-node__actions,
+.umfd-node.is-active > .umfd-node__row .umfd-node__actions {
+	opacity: 1;
 }
 
 .umfd-node__action {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
 	border: none;
 	background: none;
 	cursor: pointer;
-	padding: 2px;
+	padding: 0;
 	color: inherit;
 	opacity: .7;
 }

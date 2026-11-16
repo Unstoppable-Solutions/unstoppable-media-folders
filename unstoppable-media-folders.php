@@ -3,9 +3,8 @@
  * Plugin Name:       Unstoppable Media Folders
  * Plugin URI:        https://unstoppablesolutions.app/plugins/unstoppable-media-folders
  * Description:       Organize the WordPress Media Library into virtual, nestable folders without moving files on disk. Existing media URLs never break.
- * Version:           1.1.1
+ * Version:           1.1.4
  * Requires at least: 5.8
- * Tested up to:      7.1
  * Requires PHP:      7.4
  * Author:            Unstoppable Solutions
  * Author URI:        https://unstoppablesolutions.app
@@ -27,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Constants
  * -------------------------------------------------------------------------
  */
-define( 'UMFD_VERSION', '1.1.1' );
+define( 'UMFD_VERSION', '1.1.4' );
 define( 'UMFD_PLUGIN_FILE', __FILE__ );
 define( 'UMFD_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'UMFD_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
